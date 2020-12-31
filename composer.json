@@ -1,5 +1,5 @@
 {
-  "name": "aristotele/botman-driver-messagebird",
+  "name": "musoftware/botman-driver-messagebird",
   "license": "MIT",
   "description": "Messagebird driver for BotMan",
   "keywords": [
