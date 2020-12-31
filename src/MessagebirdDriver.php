@@ -15,6 +15,9 @@ abstract class MessagebirdDriver extends HttpDriver
 	public function buildPayload(Request $request)
 	{
 		$this->payload = $request->request->all();
+		if (count($this->payload) == 0) {
+			$this->payload = new ParameterBag((array)json_decode($request->getContent(), true));
+		}
 		$this->event = Collection::make($this->payload);
 		$this->files = Collection::make($request->files->all());
 		$this->config = Collection::make($this->config->get('messagebird', []));
