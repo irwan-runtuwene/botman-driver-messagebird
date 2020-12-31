@@ -45,6 +45,9 @@ abstract class MessagebirdDriver extends HttpDriver
 
 	public function isSignatureValid()
 	{
+		if (isset($this->query_string['token'])) {
+			unset($this->query_string['token']);
+		}
 		$request = SignedRequest::create(
 			$this->query_string,
 			$this->messagebird_signature,
