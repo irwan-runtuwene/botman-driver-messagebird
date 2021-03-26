@@ -30,4 +30,7 @@ return [
      */
     'timeout' => 15,
 
+
+    // How to set webhook
+    //https://developers.messagebird.com/api/conversations/#webhooks
 ];
