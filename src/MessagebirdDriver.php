@@ -49,7 +49,10 @@ abstract class MessagebirdDriver extends HttpDriver
 		if (isset($this->query_string['platform'])) {
 			unset($this->query_string['platform']);
 		}
-
+		if (isset($this->query_string['token'])) {
+			unset($this->query_string['token']);
+		}
+		
 		$request = SignedRequest::create(
 			$this->query_string,
 			$this->messagebird_signature,
