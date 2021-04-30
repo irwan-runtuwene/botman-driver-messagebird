@@ -105,6 +105,14 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
             $sender = $message['from'];
             $recipient = $message['to'];
 
+
+            if ($sender == $recipient) {
+                exit();
+            }
+            if ($message['direction'] == 'sent') {
+                exit();
+            }
+
             $incomingMessage = new IncomingMessage($text, $sender, $recipient, $this->payload);
 
             // add content based upon type
