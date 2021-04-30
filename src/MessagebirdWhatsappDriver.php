@@ -107,10 +107,10 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
 
 
             if ($sender == $recipient) {
-                exit();
+                return [];
             }
             if ($message['direction'] == 'sent') {
-                exit();
+                return [];
             }
 
             $incomingMessage = new IncomingMessage($text, $sender, $recipient, $this->payload);
@@ -184,6 +184,10 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
 
     public function sendPayload($payload)
     {
+        if (trim($this->config->get('business_number'), '+') == trim($payload['recipient'], '+')) {
+            return;
+        }
+
         $content = new Content();
         $content->text = $payload['text'];
 
@@ -192,6 +196,8 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
         $message->content = $content;
         $message->to = $payload['recipient']; // Channel-specific, e.g. MSISDN for SMS.
         $message->type = 'text';
+
+
 
         // may throw exception
         $conversation = $this->getClient($this->getConversationsAPIHttpClient())->conversations->start($message);
