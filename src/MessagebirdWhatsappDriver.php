@@ -97,11 +97,11 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
 
     public function getMessages()
     {
-        if (empty($this->messages)) {
+        if (empty($this->messages) || (count($this->messages) == 0)) {
             $message = $this->event->get('message');
             $text = '';
 
-            // init message
+            // init message 
             $sender = $message['from'];
             $recipient = $message['to'];
 
