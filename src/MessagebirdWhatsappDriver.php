@@ -163,41 +163,105 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
         $parameters = $additionalParameters;
         $text = '';
 
+
         $parameters['recipient'] = trim($incomingMessage->getSender(), '+'); // get phone number without '+'
 
         if (isset($this->payload['message']['channelId'])) {
             $parameters['channelId'] = $this->payload['message']['channelId'];
-        }
-        elseif (array_key_exists('sender_channel_id', $additionalParameters)) {
+        } elseif (array_key_exists('sender_channel_id', $additionalParameters)) {
             $senderChannelId = $additionalParameters['sender_channel_id'];
             $parameters['channelId'] = $senderChannelId;
         }
 
         if ($outgoingMessage instanceof OutgoingMessage) {
-            $text = $outgoingMessage->getText();
+
+            $attachment = $outgoingMessage->getAttachment();
+            if (!is_null($attachment)) {
+
+                $attachmentType = strtolower(basename(str_replace('\\', '/', get_class($attachment))));
+                if ($attachmentType === 'image' && $attachment instanceof Image) {
+                    $template = new PictureTemplate($attachment->getUrl(), $attachment->getTitle());
+
+                    $parameters['url'] = $attachment->getUrl();
+                    $parameters['type'] = 'image';
+                } elseif ($attachmentType === 'video' && $attachment instanceof Video) {
+                    $template = new VideoTemplate($attachment->getUrl());
+
+
+                    $parameters['url'] = $attachment->getUrl();
+                    $parameters['type'] = 'video';
+                } elseif (
+                    ($attachmentType === 'audio' && $attachment instanceof Audio)
+                ) {
+                    $ext = pathinfo($attachment->getUrl(), PATHINFO_EXTENSION);
+                    $template = new FileTemplate(
+                        $attachment->getUrl(),
+                        uniqid('', true)
+                            . ($ext ? '.' . $ext : '')
+                    );
+
+
+                    $parameters['url'] = $attachment->getUrl();
+                    $parameters['type'] = 'audio';
+                } elseif (($attachmentType === 'file' && $attachment instanceof File)) {
+
+                    $parameters['text'] = '**FILE NOT SUPPORTED**';
+                    $parameters['type'] = 'text';
+                } elseif ($attachmentType === 'location' && $attachment instanceof Location) {
+                    $template = new LocationTemplate($attachment->getLatitude(), $attachment->getLongitude());
+
+                    $parameters['text'] = $outgoingMessage->getText() . ' ' .
+                        'https://www.google.com/maps/search/?api=1&query=' . $attachment->getLatitude() . ',' . $attachment->getLongitude();;
+                    $parameters['type'] = 'text';
+                }
+            } else {
+                $parameters['text'] = $outgoingMessage->getText();
+                $parameters['type'] = 'text';
+            }
         }
 
-        $parameters['text'] = $text;
 
         return $parameters;
     }
 
+
     public function sendPayload($payload)
     {
-        if (trim($this->config->get('business_number'), '+') == trim($payload['recipient'], '+')) {
-            return;
-        }
+
 
         $content = new Content();
-        $content->text = $payload['text'];
-
         $message = new Message();
+
+        if ($payload['type'] == 'text') {
+            $content->text = $payload['text'];
+            $message->type = 'text';
+        }
+
+        if ($payload['type'] == 'audio') {
+            $content->audio = ['url' => $payload['url']];
+            $message->type = 'audio';
+        }
+
+
+        if ($payload['type'] == 'video') {
+            $content->video = ['url' => $payload['url']];
+            $message->type = 'video';
+        }
+        if ($payload['type'] == 'image') {
+            $content->image = ['url' => $payload['url']];
+            $message->type = 'image';
+        }
+
         $message->channelId = $payload['channelId'];
         $message->content = $content;
         $message->to = $payload['recipient']; // Channel-specific, e.g. MSISDN for SMS.
-        $message->type = 'text';
 
-
+        if (
+            trim($this->config->get('business_number'), '+') ==
+            trim($payload['recipient'], '+')
+        ) {
+            return;
+        }
 
         // may throw exception
         $conversation = $this->getClient($this->getConversationsAPIHttpClient())->conversations->start($message);
