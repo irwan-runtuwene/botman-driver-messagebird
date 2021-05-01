@@ -163,7 +163,6 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
         $parameters = $additionalParameters;
         $text = '';
 
-
         $parameters['recipient'] = trim($incomingMessage->getSender(), '+'); // get phone number without '+'
 
         if (isset($this->payload['message']['channelId'])) {
@@ -205,14 +204,18 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
                     $parameters['type'] = 'audio';
                 } elseif (($attachmentType === 'file' && $attachment instanceof File)) {
 
-                    $parameters['text'] = '**FILE NOT SUPPORTED**';
-                    $parameters['type'] = 'text';
+                    $parameters['url'] = $attachment->getUrl();
+                    $parameters['type'] = 'file';
                 } elseif ($attachmentType === 'location' && $attachment instanceof Location) {
                     $template = new LocationTemplate($attachment->getLatitude(), $attachment->getLongitude());
 
-                    $parameters['text'] = $outgoingMessage->getText() . ' ' .
-                        'https://www.google.com/maps/search/?api=1&query=' . $attachment->getLatitude() . ',' . $attachment->getLongitude();;
-                    $parameters['type'] = 'text';
+                    //                    $parameters['text'] = $outgoingMessage->getText() . ' ' .
+                    //                        'https://www.google.com/maps/search/?api=1&query=' . $attachment->getLatitude() . ',' . $attachment->getLongitude();
+                    //                    $parameters['type'] = 'text';
+
+                    $parameters['latitude'] = (float)$attachment->getLatitude();
+                    $parameters['longitude'] = (float)$attachment->getLongitude();
+                    $parameters['type'] = 'location';
                 }
             } else {
                 $parameters['text'] = $outgoingMessage->getText();
@@ -223,7 +226,6 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
 
         return $parameters;
     }
-
 
     public function sendPayload($payload)
     {
@@ -244,13 +246,23 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
 
 
         if ($payload['type'] == 'video') {
-            $content->video = ['url' => $payload['url']];
+            $content->video = ['url' => $payload['url'], 'caption' => 'video'];
             $message->type = 'video';
         }
+
         if ($payload['type'] == 'image') {
             $content->image = ['url' => $payload['url']];
             $message->type = 'image';
         }
+        if ($payload['type'] == 'file') {
+            $content->file = ['url' => $payload['url']];
+            $message->type = 'file';
+        }
+        if ($payload['type'] == 'location') {
+            $content->location = ['latitude' => $payload['latitude'], 'longitude' => $payload['longitude']];
+            $message->type = 'location';
+        }
+
 
         $message->channelId = $payload['channelId'];
         $message->content = $content;
@@ -266,6 +278,7 @@ class MessagebirdWhatsappDriver extends MessagebirdDriver
         // may throw exception
         $conversation = $this->getClient($this->getConversationsAPIHttpClient())->conversations->start($message);
     }
+
 
     public function getConversationAnswer(IncomingMessage $message)
     {
