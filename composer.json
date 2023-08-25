@@ -1,5 +1,5 @@
 {
-  "name": "musoftware/botman-driver-messagebird",
+  "name": "irwan-runtuwene/botman-driver-messagebird",
   "license": "MIT",
   "description": "Messagebird driver for BotMan",
   "keywords": [
@@ -15,6 +15,10 @@
     {
       "name": "Mahmoud Mu",
       "email": "mahmoudmn810@gmail.com"
+    },
+    {
+      "name": "S. Irwan Runtuwene",
+      "email": "stefanus.irwan@gmail.com"
     }
   ],
   "require": {
